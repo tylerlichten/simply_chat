@@ -1,5 +1,6 @@
 require "simply_chat/version"
+require "actioncable"
 
-module SimplyChat
-  # Your code goes here...
+class Chatter < ActionCable::Base
+	#TODO...
 end
