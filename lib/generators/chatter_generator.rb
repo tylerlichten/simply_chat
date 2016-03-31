@@ -31,8 +31,6 @@ class ChatterGenerator < Rails::Generators::Base
 	  <% end %>
 	  <div class='clear'></div>
 	</div>"
-
-	create_file "app/views/layouts/application.html.erb"
   end 
 
   def create_chat_controller
