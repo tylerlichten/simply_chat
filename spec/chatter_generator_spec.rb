@@ -8,47 +8,47 @@ describe ChatterGenerator, type: :generator do
   end
 
   it "creates a view for chatroom" do
-    assert_file "app/views/messages/index.html.erb", 
-    "<div id='messages'>
-	  <ul id='messages-list'>
-	    <% @current_messages.each do |message| %>
-	      <li class='messages-list-item'>
-	        <div class='messages-list-item-name'>
-	          <%= message.user.uid %>:
-	          <div class='messages-list-item-timestamp'>
-	            (<%= l message.created_at, format: :short %>)
+    assert_file "app/views/chats/index.html.erb", 
+    "<div id='chats'>
+	  <ul id='chats-list'>
+	    <% @current_chats.each do |chat| %>
+	      <li class='chats-list-item'>
+	        <div class='chats-list-item-name'>
+	          <%= chat.user.uid %>:
+	          <div class='chats-list-item-timestamp'>
+	            (<%= l chat.created_at, format: :short %>)
 	          </div>        
 	        </div>
-	        <div class='messages-list-item-body'>
-	          <%= message.body %>
+	        <div class='chats-list-item-body'>
+	          <%= chat.body %>
 	        </div>
 	      </li>
 	    <% end %>
 	  </ul>
 	</div>
 
-	<div id='message-form-wrapper'>
-	  <%= form_for :message, html: { id: 'message-form' } do |f| %>
-	    <%= f.text_area :body, id: 'message-form-body' %>
-	    <%= f.submit id: 'message-form-submit' %>
+	<div id='chat-form-wrapper'>
+	  <%= form_for :chat, html: { id: 'chat-form' } do |f| %>
+	    <%= f.text_area :body, id: 'chat-form-body' %>
+	    <%= f.submit id: 'chat-form-submit' %>
 	  <% end %>
 	  <div class='clear'></div>
 	</div>"
   end
 
-  it "creates a controller for chat messages" do
-    assert_file "app/controllers/messages_controller.rb", 
-    "class MessagesController < ApplicationController
+  it "creates a controller for chat chats" do
+    assert_file "app/controllers/chats_controller.rb", 
+    "class ChatsController < ApplicationController
 	  before_action :require_current_user
 
 	  def index
-	    @current_messages = Message.current.includes(:user).reverse
+	    @current_chats = Chat.current.includes(:user).reverse
 	  end
 
 	  private
 
-	  def message_params
-	    params.require(:message).permit(:body)
+	  def chat_params
+	    params.require(:chat).permit(:body)
 	  end
 	end"
   end
@@ -100,13 +100,11 @@ describe ChatterGenerator, type: :generator do
 	    protected
 
 	    def find_verified_user
-
 	      if verified_user = User.find_by(id: cookies.signed[:user_id])
 	        verified_user
 	      else
 	        reject_unauthorized_connection
 	      end
-
 	    end
 	  end
 	end"
@@ -116,35 +114,35 @@ describe ChatterGenerator, type: :generator do
     assert_file "app/assets/javascripts/application.js", 
     "\n//= require cable
 	//= require ./remote
-	//= require ./messages"
+	//= require ./chats"
   end
 
-  it "creates a message form" do
-    assert_file "app/assets/javascripts/messages.es6", 
+  it "creates a chat form" do
+    assert_file "app/assets/javascripts/chats.es6", 
     "$(function() {
-	  $('#message-form').submit(function(event) {
+	  $('#chat-form').submit(function(event) {
 	    event.preventDefault();
-	    let $messageBody = $(this).find(\"textarea[name='message[body]']\")
-	    Remote.messaging.sendMessage($messageBody.val());
-	    $messageBody.val(null);
+	    let $chatBody = $(this).find(\"textarea[name='chat[body]']\")
+	    Remote.chatting.sendchat($chatBody.val());
+	    $chatBody.val(null);
 	  });
 
-	  $(Remote.messaging).on('received', function(event, data) {
-	    let { body: body, created_at: createdAt } = data.message;
+	  $(Remote.chatting).on('received', function(event, data) {
+	    let { body: body, created_at: createdAt } = data.chat;
 	    let { uid } = data.user;
-	    let html = `<li class='messages-list-item'>
-	                  <div class='messages-list-item-name'>
+	    let html = `<li class='chats-list-item'>
+	                  <div class='chats-list-item-name'>
 	                    ${ uid }
 	                  </div>
-	                  <div class='messages-list-item-body'>
+	                  <div class='chats-list-item-body'>
 	                    ${ body }
-	                    <span class='messages-list-item-timestamp'>
+	                    <span class='chats-list-item-timestamp'>
 	                      ${ createdAt }
 	                    </span>
 	                  </div>
 	                </li>`;
 
-	    $('#messages-list').append($(html));
+	    $('#chats-list').append($(html));
 	  });
 	});"
   end
@@ -155,62 +153,77 @@ describe ChatterGenerator, type: :generator do
 
 	Remote.cable = Cable.createConsumer(`ws://${window.location.hostname}:28080`);
 
-	Remote.messaging = Remote.cable.subscriptions.create('MessagesChannel', {
+	Remote.chatting = Remote.cable.subscriptions.create('chatsChannel', {
 	  received: function(data) {
 	    $(this).trigger('received', data);
 	  },
-	  sendMessage: function(messageBody) {
-	    this.perform('send_message', { body: messageBody });
+	  sendchat: function(chatBody) {
+	    this.perform('send_chat', { body: chatBody });
 	  }
 	});"
   end
 
-  it "creates a message model" do
-    assert_file "app/models/message.rb", 
-    "class Message < ActiveRecord::Base
-	  belongs_to :user
+  it "creates a chat channel" do
+  	assert_file "app/channels/chats_channel.rb",
+  	"class ChatsChannel < ApplicationCable::Channel
+	  def subscribed
+	    stream_from \"chats\"
+	  end
 
-	  scope :current, -> { order(created_at: :desc).limit(5) }
-
-	  def as_json(options = {})
-	    MessageSerializer.new(self).as_json
+	  def send_chat(data)
+	    chat = current_user.chats.create(body: data['body'])
+	    ActionCable.server.broadcast 'chats', { chat: chat,
+	                                               user: current_user }
 	  end
 	end"
   end
 
-  it "creates a User association for messages" do
+  it "inserts into chat model" do
+    assert_file "app/models/chat.rb", 
+    "\n
+  	belongs_to :user
+
+	  scope :current, -> { order(created_at: :desc).limit(5) }
+
+	  def as_json(options = {})
+	    chatSerializer.new(self).as_json
+	  end
+	end"
+  end
+
+  it "creates a User association for chats" do
     assert_file "app/models/user.rb", 
-    "\n  has_many :messages"
+    "\n  has_many :chats"
   end
 
   it "creates a base stylesheet" do
     assert_file "app/assets/stylesheets/base.css.sass", 
     "@import url(https://fonts.googleapis.com/css?family=Istok+Web:400,700|Lora:400,700)
 
-	html
-	  box-sizing: border-box
+    html
+	    box-sizing: border-box
 
-	*, *:before, *:after
-	  box-sizing: inherit
+    *, *:before, *:after
+        box-sizing: inherit
 
-	body
-	  background-color: #fafafa
-	  color: #2f2f2f
-	  font-family: 'Lora', serif
+    body
+        background-color: #fafafa
+        color: #2f2f2f
+        font-family: 'Lora', serif
 
-	nav
-	  text-align: right
-	  margin-top: 10px
+    nav
+        text-align: right
+        margin-top: 10px
 
-	a, a:active, a:visited
-	  color: #2f3da2
-	  text-decoration: none
-	  font-family: 'Istok Web', sans-serif"
+    a, a:active, a:visited
+        color: #2f3da2
+        text-decoration: none
+        font-family: 'Istok Web', sans-serif"
   end
 
-  it "creates a messages stylesheet" do
-    assert_file "app/assets/stylesheets/messages.css.sass", 
-    "#messages-list
+  it "creates a chats stylesheet" do
+    assert_file "app/assets/stylesheets/chats.css.sass", 
+    "#chats-list
 	  list-style: none
 	  display: table
 	  line-height: 1.2
@@ -219,29 +232,29 @@ describe ChatterGenerator, type: :generator do
 	  max-width: 1000px
 	  margin: 0 auto
 
-	.messages-list-item
+	.chats-list-item
 	  display: table-row
 	  border-bottom: 1px solid #ccc
 
-	.messages-list-item-name
+	.chats-list-item-name
 	  display: table-cell
 	  font-weight: bold
 	  color: #0a0a0a
 	  width: 10%
 	  font-family: 'Istok Web', sans-serif
 
-	.messages-list-item-body
+	.chats-list-item-body
 	  display: table-cell
 	  padding: 10px
 	  width: 90%
 
-	.messages-list-item-timestamp
+	.chats-list-item-timestamp
 	  text-align: left
 	  color: #ccc
 	  margin-top: 5px
 	  font-size: 0.8em
 
-	#message-form-wrapper
+	#chat-form-wrapper
 	  width: 100%
 	  margin: 0 auto
 	  position: fixed
@@ -250,19 +263,19 @@ describe ChatterGenerator, type: :generator do
 	  border-top: 1px solid #ccc
 	  background-color: #f6f6f6
 
-	#message-form
+	#chat-form
 	  width: 100%
 	  max-width: 1000px
 	  margin: 10px auto
 
-	#message-form-body
+	#chat-form-body
 	  width: 85%
 	  height: 50px
 	  float: left
 	  border: 1px solid #2f2f2f
 	  border-radius: 3px
 
-	#message-form-submit
+	#chat-form-submit
 	  width: 10%
 	  margin-left: 5%
 	  height: 50px
@@ -273,20 +286,20 @@ describe ChatterGenerator, type: :generator do
 	  color: white"
   end
 
-  it "creates a message serializer" do
-    assert_file "app/lib/message_serializer.rb", 
-    "class MessageSerializer
+  it "creates a chat serializer" do
+    assert_file "app/lib/chat_serializer.rb", 
+    "class chatSerializer
 	  include ActionView::Helpers::SanitizeHelper
-	  attr_reader :message
+	  attr_reader :chat
 
-	  def initialize(message)
-	    @message = message
+	  def initialize(chat)
+	    @chat = chat
 	  end
 
 	  def as_json
 	    {
-	      body: sanitize(message.body),
-	      created_at: I18n.l(message.created_at, format: :short)
+	      body: sanitize(chat.body),
+	      created_at: I18n.l(chat.created_at, format: :short)
 	    }
 	  end
 	end"

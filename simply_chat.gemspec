@@ -9,8 +9,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Tyler Lichten"]
   spec.email         = ["tlich10@gmail.com"]
 
-  spec.summary       = %q{Builds a simple chatroom for users to chat.}
-  spec.description   = %q{Builds a simple chatroom for users to chat.}
+  spec.summary       = %q{Build a chatroom for website users}
+  spec.description   = %q{Build a chatroom for website users}
   spec.homepage      = ""
   spec.license       = "MIT"
 
@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_runtime_dependency "thor"
-  spec.add_runtime_dependency "actioncable", github: "rails/actioncable"
+  spec.add_runtime_dependency "actioncable", github: 'rails/actioncable', ref: '6143352f8ffba303f0c7644be7573f6725554cb3'
   spec.add_runtime_dependency "puma"
   spec.add_runtime_dependency "sprockets", ">=3.0.0.beta"
   spec.add_runtime_dependency "sprockets-es6"

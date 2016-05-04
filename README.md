@@ -1,10 +1,8 @@
 # SimplyChat
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/simply_chat`. To experiment with that code, run `bin/console` for an interactive prompt.
+simply_chat builds a chatroom for users of the website using Redis and Puma servers.
 
-TODO: Delete this and the text above, and describe your gem
-
-## Installation
+# Installation
 
 Add this line to your application's Gemfile:
 
@@ -20,22 +18,37 @@ Or install it yourself as:
 
     $ gem install simply_chat
 
-## Usage
+# Usage
 
-TODO: Write usage instructions here
+###Step 1
 
-## Development
+Create Chat model.
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+$ rails g model Chat user_id:integer body:text
+$ rake db:migrate
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+###Step 2
 
-## Contributing
+Add index to db using rails console.
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/simply_chat.
+ActiveRecord::Migration.add_index :chats, [:user_id]
 
+###Step 3
 
-## License
+Add link to chatroom (place link in navbar).
+
+<li><%= link_to 'Chatroom', chats_path %></li>
+
+Add path in routes.rb.
+
+resources :chats
+get 'chats' => 'chats#index'
+
+# Contributing
+
+Bug reports and pull requests are welcome on GitHub at https://github.com/tylerlichten/simply_chat.
+
+# License
 
 The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
 
