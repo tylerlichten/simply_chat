@@ -24,25 +24,25 @@ Or install it yourself as:
 
 Create Chat model.
 
-$ rails g model Chat user_id:integer body:text
-$ rake db:migrate
+	$ rails g model Chat user_id:integer body:text    
+	$ rake db:migrate
 
 ###Step 2
 
 Add index to db using rails console.
 
-ActiveRecord::Migration.add_index :chats, [:user_id]
+	ActiveRecord::Migration.add_index :chats, [:user_id]
 
 ###Step 3
 
 Add link to chatroom (place link in navbar).
 
-<li><%= link_to 'Chatroom', chats_path %></li>
+	<li><%= link_to 'Chatroom', chats_path %></li>
 
 Add path in routes.rb.
 
-resources :chats
-get 'chats' => 'chats#index'
+	resources :chats
+	get 'chats' => 'chats#index'
 
 # Contributing
 
