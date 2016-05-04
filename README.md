@@ -22,18 +22,24 @@ Or install it yourself as:
 
 ###Step 1
 
+Call chatter generator for necessary files.
+
+	$ rails g chatter
+
+###Step 2
+
 Create Chat model.
 
 	$ rails g model Chat user_id:integer body:text    
 	$ rake db:migrate
 
-###Step 2
+###Step 3
 
 Add index to db using rails console.
 
 	ActiveRecord::Migration.add_index :chats, [:user_id]
 
-###Step 3
+###Step 4
 
 Add link to chatroom (place link in navbar).
 
