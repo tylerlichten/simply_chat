@@ -36,8 +36,6 @@ class ChatterGenerator < Rails::Generators::Base
   def create_chat_controller
   	create_file "app/controllers/chats_controller.rb", 
   	"class ChatsController < ApplicationController
-	  before_action :require_current_user
-
 	  def index
 	    @current_chats = Chat.current.includes(:user).reverse
 	  end
